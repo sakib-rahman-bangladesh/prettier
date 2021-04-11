@@ -3,21 +3,17 @@
 const fs = require("fs");
 const path = require("path");
 const stripAnsi = require("strip-ansi");
-const ENV_LOG_LEVEL = require("../src/cli-logger").ENV_LOG_LEVEL;
+const { SynchronousPromise } = require("synchronous-promise");
+const { prettierCli, thirdParty } = require("./env");
 
-const isProduction = process.env.NODE_ENV === "production";
-const prettierCli = isProduction ? "../dist/bin/prettier" : "../bin/prettier";
-const thirdParty = isProduction ? "../dist/third-party" : "../src/third-party";
-
-function runPrettier(dir, args, options) {
-  args = args || [];
-  options = options || {};
+function runPrettier(dir, args = [], options = {}) {
+  args = Array.isArray(args) ? args : [args];
 
   let status;
   let stdout = "";
   let stderr = "";
 
-  jest.spyOn(process, "exit").mockImplementation(exitCode => {
+  jest.spyOn(process, "exit").mockImplementation((exitCode) => {
     if (status === undefined) {
       status = exitCode || 0;
     }
@@ -25,23 +21,23 @@ function runPrettier(dir, args, options) {
 
   jest
     .spyOn(process.stdout, "write")
-    .mockImplementation(text => appendStdout(text));
+    .mockImplementation((text) => appendStdout(text));
 
   jest
     .spyOn(process.stderr, "write")
-    .mockImplementation(text => appendStderr(text));
+    .mockImplementation((text) => appendStderr(text));
 
   jest
     .spyOn(console, "log")
-    .mockImplementation(text => appendStdout(text + "\n"));
+    .mockImplementation((text) => appendStdout(text + "\n"));
 
   jest
     .spyOn(console, "warn")
-    .mockImplementation(text => appendStderr(text + "\n"));
+    .mockImplementation((text) => appendStderr(text + "\n"));
 
   jest
     .spyOn(console, "error")
-    .mockImplementation(text => appendStderr(text + "\n"));
+    .mockImplementation((text) => appendStderr(text + "\n"));
 
   jest.spyOn(Date, "now").mockImplementation(() => 0);
 
@@ -51,34 +47,56 @@ function runPrettier(dir, args, options) {
     write.push({ filename, content });
   });
 
+  const origStatSync = fs.statSync;
+
+  jest.spyOn(fs, "statSync").mockImplementation((filename) => {
+    if (path.basename(filename) === "virtualDirectory") {
+      return origStatSync(path.join(__dirname, __filename));
+    }
+    return origStatSync(filename);
+  });
+
   const originalCwd = process.cwd();
   const originalArgv = process.argv;
   const originalExitCode = process.exitCode;
   const originalStdinIsTTY = process.stdin.isTTY;
   const originalStdoutIsTTY = process.stdout.isTTY;
-  const originalEnvLogLevel = process.env[ENV_LOG_LEVEL];
 
   process.chdir(normalizeDir(dir));
-  process.stdin.isTTY = !!options.isTTY;
-  process.stdout.isTTY = !!options.stdoutIsTTY;
-  process.argv = ["path/to/node", "path/to/prettier/bin"].concat(args);
+  process.stdin.isTTY = Boolean(options.isTTY);
+  process.stdout.isTTY = Boolean(options.stdoutIsTTY);
+  process.argv = ["path/to/node", "path/to/prettier/bin", ...args];
 
   jest.resetModules();
 
   // We cannot use `jest.setMock("get-stream", impl)` here, because in the
   // production build everything is bundled into one file so there is no
   // "get-stream" module to mock.
-  jest.spyOn(require(thirdParty), "getStream").mockImplementation(() => ({
-    then: handler => handler(options.input || "")
-  }));
+  jest
+    .spyOn(require(thirdParty), "getStdin")
+    .mockImplementation(() => SynchronousPromise.resolve(options.input || ""));
+  jest
+    .spyOn(require(thirdParty), "isCI")
+    .mockImplementation(() => Boolean(options.ci));
   jest
     .spyOn(require(thirdParty), "cosmiconfig")
     .mockImplementation((moduleName, options) =>
-      require("cosmiconfig")(
-        moduleName,
-        Object.assign({}, options, { stopDir: __dirname })
-      )
+      require("cosmiconfig").cosmiconfig(moduleName, {
+        ...options,
+        stopDir: path.join(__dirname, "cli"),
+      })
     );
+  jest
+    .spyOn(require(thirdParty), "cosmiconfigSync")
+    .mockImplementation((moduleName, options) =>
+      require("cosmiconfig").cosmiconfigSync(moduleName, {
+        ...options,
+        stopDir: path.join(__dirname, "cli"),
+      })
+    );
+  jest
+    .spyOn(require(thirdParty), "findParentDir")
+    .mockImplementation(() => process.cwd());
 
   try {
     require(prettierCli);
@@ -92,20 +110,22 @@ function runPrettier(dir, args, options) {
     process.exitCode = originalExitCode;
     process.stdin.isTTY = originalStdinIsTTY;
     process.stdout.isTTY = originalStdoutIsTTY;
-    process.env[ENV_LOG_LEVEL] = originalEnvLogLevel;
     jest.restoreAllMocks();
   }
 
   const result = { status, stdout, stderr, write };
 
-  const testResult = testOptions => {
-    testOptions = testOptions || {};
-
-    Object.keys(result).forEach(name => {
+  const testResult = (testOptions) => {
+    for (const name of Object.keys(result)) {
       test(`(${name})`, () => {
         const value =
+          // \r is trimmed from jest snapshots by default;
+          // manually replacing this character with /*CR*/ to test its true presence
+          // If ignoreLineEndings is specified, \r is simply deleted instead
           typeof result[name] === "string"
-            ? stripAnsi(result[name])
+            ? options.ignoreLineEndings
+              ? stripAnsi(result[name]).replace(/\r/g, "")
+              : stripAnsi(result[name]).replace(/\r/g, "/*CR*/")
             : result[name];
         if (name in testOptions) {
           if (name === "status" && testOptions[name] === "non-zero") {
@@ -117,12 +137,12 @@ function runPrettier(dir, args, options) {
           expect(value).toMatchSnapshot();
         }
       });
-    });
+    }
 
     return result;
   };
 
-  return Object.assign({ test: testResult }, result);
+  return { test: testResult, ...result };
 
   function appendStdout(text) {
     if (status === undefined) {

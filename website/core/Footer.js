@@ -1,15 +1,14 @@
 "use strict";
 
 const React = require("react");
+const PropTypes = require("prop-types");
 
-const GithubButton = props => (
+const GithubButton = (props) => (
   <a
     className="github-button"
     href={props.config.githubUrl}
     data-icon="octicon-star"
-    data-count-href={`/${props.config.repo}/stargazers`}
-    data-count-api={`/repos/${props.config.repo}#stargazers_count`}
-    data-count-aria-label="# stargazers on GitHub"
+    data-show-count="true"
     aria-label="Star this project on GitHub"
   >
     Star
@@ -17,18 +16,23 @@ const GithubButton = props => (
 );
 
 GithubButton.propTypes = {
-  config: React.PropTypes.object
+  config: PropTypes.object,
 };
 
 class Footer extends React.Component {
   url(path) {
-    return this.props.config.baseUrl + "docs/" + this.props.language + path;
+    const language = this.props.language || "en";
+    return `${this.props.config.baseUrl}docs/${language}${path}`;
+  }
+
+  usersUrl() {
+    const language = this.props.language || "en";
+    return `${this.props.config.baseUrl}${language}/users`;
   }
 
   render() {
-    // const currentYear = new Date().getFullYear();
     return (
-      <footer className="nav-footer" id="footer">
+      <footer className="footerSection nav-footer" id="footer">
         <section className="sitemap">
           <a href={this.props.config.baseUrl} className="nav-home">
             <img
@@ -40,14 +44,14 @@ class Footer extends React.Component {
             <h5>Docs</h5>
             <a href={this.url("/index.html")}>About</a>
             <a href={this.url("/install.html")}>Usage</a>
+            <br />
+            <a href="https://www.netlify.com">
+              <img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg" />
+            </a>
           </div>
           <div>
             <h5>Community</h5>
-            <a
-              href={this.props.config.baseUrl + this.props.language + "/users/"}
-            >
-              User Showcase
-            </a>
+            <a href={this.usersUrl()}>User Showcase</a>
             <a
               href="http://stackoverflow.com/questions/tagged/prettier"
               target="_blank"
@@ -57,17 +61,24 @@ class Footer extends React.Component {
             </a>
             <a href="https://gitter.im/jlongster/prettier">Chat on Gitter</a>
             <a href="https://twitter.com/PrettierCode">
-              <img
-                alt="Follow Prettier on Twitter"
-                src="https://img.shields.io/twitter/follow/prettiercode.svg?label=Follow+Prettier&style=social"
-              />
+              @PrettierCode on Twitter
             </a>
+            <object
+              type="image/svg+xml"
+              data="https://img.shields.io/twitter/follow/prettiercode.svg?label=Follow+Prettier&style=social"
+            >
+              <a href="https://twitter.com/intent/follow?screen_name=prettiercode">
+                <img
+                  alt="Follow Prettier on Twitter"
+                  src="https://img.shields.io/twitter/follow/prettiercode.png?label=Follow+Prettier&style=social"
+                />
+              </a>
+            </object>
           </div>
           <div>
             <h5>More</h5>
-            {/*<a href={this.props.config.baseUrl + "blog"}>Blog</a>*/}
+            <a href={this.props.config.baseUrl + "blog"}>Blog</a>
             <a href={this.props.config.githubUrl}>GitHub</a>
-            <a href={this.props.config.githubUrl + "/releases"}>Releases</a>
             <a href={this.props.config.githubUrl + "/issues"}>Issues</a>
             <GithubButton config={this.props.config} />
           </div>
@@ -78,8 +89,8 @@ class Footer extends React.Component {
 }
 
 Footer.propTypes = {
-  language: React.PropTypes.string,
-  config: React.PropTypes.object
+  language: PropTypes.string,
+  config: PropTypes.object,
 };
 
 module.exports = Footer;

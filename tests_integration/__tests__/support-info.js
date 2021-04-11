@@ -1,30 +1,36 @@
 "use strict";
 
-const prettier = require("../../tests_config/require_prettier");
+const prettier = require("prettier-local");
 const runPrettier = require("../runPrettier");
 
-describe("API getSupportInfo()", () => {
-  test("no arguments", () => {
-    expect(prettier.getSupportInfo()).toMatchSnapshot();
-  });
-
-  const testVersions = ["0.0.0", "1.0.0", "1.4.0", "1.5.0", "1.7.1", "1.8.0"];
-
-  testVersions.forEach(version => {
-    test(`with version ${version}`, () => {
-      expect(
-        prettier
-          .getSupportInfo(version)
-          .languages.reduce(
-            (obj, language) =>
-              Object.assign({ [language.name]: language.parsers }, obj),
-            {}
-          )
-      ).toMatchSnapshot();
-    });
-  });
+test("API getSupportInfo()", () => {
+  expect(getCoreInfo()).toMatchSnapshot();
 });
 
 describe("CLI --support-info", () => {
   runPrettier("cli", "--support-info").test({ status: 0 });
 });
+
+function getCoreInfo() {
+  const supportInfo = prettier.getSupportInfo();
+  const languages = supportInfo.languages.reduce(
+    (obj, language) => ({ [language.name]: language.parsers, ...obj }),
+    {}
+  );
+  const options = supportInfo.options.reduce(
+    (obj, option) => ({
+      [option.name]: {
+        type: option.type,
+        default: option.default,
+        ...(option.type === "int"
+          ? { range: option.range }
+          : option.type === "choice"
+          ? { choices: option.choices.map((choice) => choice.value) }
+          : null),
+      },
+      ...obj,
+    }),
+    {}
+  );
+  return { languages, options };
+}

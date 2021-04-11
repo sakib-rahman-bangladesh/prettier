@@ -3,29 +3,27 @@ id: editors
 title: Editor Integration
 ---
 
-## Atom
+To get the most out of Prettier, it’s recommended to run it from your editor.
 
-Atom users can simply install the [prettier-atom](https://github.com/prettier/prettier-atom) package and use `Ctrl+Alt+F` to format a file (or format on save if enabled).
+If your editor does not support Prettier, you can instead [run Prettier with a file watcher](watching-files.md).
 
-## Emacs
-
-Emacs users should see [this repository](https://github.com/prettier/prettier-emacs) for on-demand formatting.
-
-## Vim
-
-Vim users can simply install either [sbdchd](https://github.com/sbdchd)/[neoformat](https://github.com/sbdchd/neoformat), [w0rp](https://github.com/w0rp)/[ale](https://github.com/w0rp/ale), or [prettier](https://github.com/prettier)/[vim-prettier](https://github.com/prettier/vim-prettier), for more details see [the vim setup guide](vim.md).
+**Note!** It’s important to [install](install.md) Prettier locally in every project, so each project gets the correct Prettier version.
 
 ## Visual Studio Code
 
-Can be installed using the extension sidebar. Search for `Prettier - Code formatter`.
+`prettier-vscode` can be installed using the extension sidebar – it’s called “Prettier - Code formatter.” [Check its repository for configuration and shortcuts](https://github.com/prettier/prettier-vscode).
 
-Can also be installed using `ext install prettier-vscode`.
+If you’d like to toggle the formatter on and off, install [`vscode-status-bar-format-toggle`](https://marketplace.visualstudio.com/items?itemName=tombonnike.vscode-status-bar-format-toggle).
 
-[Check its repository for configuration and shortcuts](https://github.com/prettier/prettier-vscode)
+## Emacs
 
-## Visual Studio
+Check out the [prettier-emacs](https://github.com/prettier/prettier-emacs) repo, or [prettier.el](https://github.com/jscheid/prettier.el). The package [Apheleia](https://github.com/raxod502/apheleia) supports multiple code formatters, including Prettier.
 
-Install the [JavaScript Prettier extension](https://github.com/madskristensen/JavaScriptPrettier).
+## Vim
+
+[vim-prettier](https://github.com/prettier/vim-prettier) is a Prettier-specific Vim plugin. [Neoformat](https://github.com/sbdchd/neoformat), [ALE](https://github.com/w0rp/ale), and [coc-prettier](https://github.com/neoclide/coc-prettier) are multi-language Vim linter/formatter plugins that support Prettier.
+
+For more details see [the Vim setup guide](vim.md).
 
 ## Sublime Text
 
@@ -34,3 +32,16 @@ Sublime Text support is available through Package Control and the [JsPrettier](h
 ## JetBrains WebStorm, PHPStorm, PyCharm...
 
 See the [WebStorm setup guide](webstorm.md).
+
+## Visual Studio
+
+Install the [JavaScript Prettier extension](https://github.com/madskristensen/JavaScriptPrettier).
+
+## Atom
+
+Atom users can install the [prettier-atom](https://github.com/prettier/prettier-atom) package, or one of the more minimalistic [mprettier](https://github.com/t9md/atom-mprettier) and
+[miniprettier](https://github.com/duailibe/atom-miniprettier) packages.
+
+## Espresso
+
+Espresso users can install the [espresso-prettier](https://github.com/eablokker/espresso-prettier) plugin.
