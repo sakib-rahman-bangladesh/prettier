@@ -477,7 +477,7 @@ function parseNestedCSS(node, options) {
 
         // `@color :blue;`
         if (
-          !["page", "nest"].includes(node.name) &&
+          !["page", "nest", "keyframes"].includes(node.name) &&
           node.params &&
           node.params[0] === ":"
         ) {
@@ -515,7 +515,7 @@ function parseNestedCSS(node, options) {
       }
 
       if (name === "at-root") {
-        if (/^\(\s*(without|with)\s*:[\S\s]+\)$/.test(params)) {
+        if (/^\(\s*(without|with)\s*:.+\)$/s.test(params)) {
           node.params = parseValue(params, options);
         } else {
           node.selector = parseSelector(params);

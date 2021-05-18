@@ -13,7 +13,10 @@ const {
   printIndexedAccessType,
 } = require("./type-annotation");
 const { printInterface } = require("./interface");
-const { printTypeParameters } = require("./type-parameters");
+const {
+  printTypeParameter,
+  printTypeParameters,
+} = require("./type-parameters");
 const {
   printExportDeclaration,
   printExportAllDeclaration,
@@ -83,11 +86,16 @@ function printFlow(path, options, print) {
         printTypeParameters(path, options, print, "typeParameters"),
       ];
     case "IndexedAccessType":
+    case "OptionalIndexedAccessType":
       return printIndexedAccessType(path, options, print);
     // Type Annotations for Facebook Flow, typically stripped out or
     // transformed away before printing.
     case "TypeAnnotation":
       return print("typeAnnotation");
+    case "TypeParameter":
+      return printTypeParameter(path, options, print);
+    case "TypeofTypeAnnotation":
+      return ["typeof ", print("argument")];
   }
 }
 
